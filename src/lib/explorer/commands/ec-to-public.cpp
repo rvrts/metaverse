@@ -29,6 +29,35 @@ namespace explorer {
 namespace commands {
 using namespace bc::wallet;
 
+console_result ec_priavte_to_address(bc::explorer::config::ec_private& secret, 
+        payment_address& address, uint8_t address_version = 0x32)
+{
+    ec_compressed point;
+    secret_to_public(point, secret);
+
+    explorer::config::byte version(address_version);
+
+    // Serialize to the original compression state.
+    ec_public ec_public_key(point, true);
+    address = payment_address(ec_public_key, version);
+
+    return console_result::okay;
+}
+
+console_result ec_priavte_to_public(bc::explorer::config::ec_private& secret, 
+        ec_public& ec_public_key, uint8_t address_version = 0x32)
+{
+    ec_compressed point;
+    secret_to_public(point, secret);
+
+    explorer::config::byte version(address_version);
+
+    // Serialize to the original compression state.
+    ec_public_key = ec_public(point, true);
+    return console_result::okay;
+}
+
+
 // In the case of failure this produces ec_compressed_null.
 console_result ec_to_public::invoke(std::ostream& output, std::ostream& error)
 {

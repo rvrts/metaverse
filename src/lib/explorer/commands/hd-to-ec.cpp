@@ -30,6 +30,36 @@ namespace libbitcoin {
 namespace explorer {
 namespace commands {
 
+console_result hd_to_ec_private_impl(std::ostream& error,
+        const explorer::config::hd_key& key,
+        std::string& ec_private_key,
+        uint32_t private_version = 76066276,
+        uint32_t public_version = 76067358)
+{
+    const auto key_version = key.version();
+    if (key_version != private_version && key_version != public_version)
+    {
+        error << "ERROR_VERSION" << std::flush;
+        return console_result::failure;
+    }
+
+    if (key.version() == private_version)
+    {
+        const auto prefixes = bc::wallet::hd_private::to_prefixes(
+            key.version(), public_version);
+
+        // Create the private key from hd_key and the public version.
+        const auto private_key = bc::wallet::hd_private(key, prefixes);
+        if (private_key)
+        {
+            ec_private_key = encode_base16(private_key.secret());
+            return console_result::okay;
+        }
+    }
+
+    return console_result::failure;
+}
+
 console_result hd_to_ec::invoke(std::ostream& output, std::ostream& error)
 {
     // Bound parameters.

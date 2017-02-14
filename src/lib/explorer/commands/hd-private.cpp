@@ -29,6 +29,26 @@ namespace libbitcoin {
 namespace explorer {
 namespace commands {
 
+console_result hd_private_impl(std::ostream& error,
+        const uint32_t index,
+        const bc::wallet::hd_private& private_key,
+        bc::wallet::hd_private& child_private_key)
+
+{
+    bool hard = false;
+    static constexpr auto first = bc::wallet::hd_first_hardened_key;
+    const auto position = hard ? first + index : index;
+    child_private_key = private_key.derive_private(position);
+
+    if (!child_private_key)
+    {
+        error << "ERROR" << std::flush;
+        return console_result::failure;
+    }
+
+    return console_result::okay;
+}
+
 console_result hd_private::invoke(std::ostream& output, std::ostream& error)
 {
     // Bound parameters.

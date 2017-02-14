@@ -30,14 +30,12 @@ namespace commands {
 using namespace bc::config;
 using namespace bc::wallet;
 
-console_result mnemonic_to_seed::invoke(std::ostream& output,
-    std::ostream& error)
+console_result mnemonic_to_seed_impl(std::ostream& error,
+        const dictionary_list& language,
+        const std::string& passphrase, 
+        const std::vector<std::string>& words, 
+        bc::long_hash& seed)
 {
-    // Bound parameters.
-    const dictionary_list& language = get_language_option();
-    const auto& passphrase = get_passphrase_option();
-    const auto& words = get_words_argument();
-
     const auto word_count = words.size();
 
     if ((word_count % bc::wallet::mnemonic_word_multiple) != 0)
@@ -60,7 +58,7 @@ console_result mnemonic_to_seed::invoke(std::ostream& output,
 
 #ifdef WITH_ICU
     // Any word set divisible by 3 works regardless of language validation.
-    const auto seed = decode_mnemonic(words, passphrase);
+    seed = decode_mnemonic(words, passphrase);
 #else
     if (!passphrase.empty())
     {
@@ -69,8 +67,25 @@ console_result mnemonic_to_seed::invoke(std::ostream& output,
     }
 
     // The passphrase requires ICU normalization.
-    const auto seed = decode_mnemonic(words);
+    seed = decode_mnemonic(words);
 #endif
+
+    return console_result::okay;
+}
+
+console_result mnemonic_to_seed::invoke(std::ostream& output,
+    std::ostream& error)
+{
+    // Bound parameters.
+    const dictionary_list& language = get_language_option();
+    const auto& passphrase = get_passphrase_option();
+    const auto& words = get_words_argument();
+
+    bc::long_hash seed;
+    if (mnemonic_to_seed_impl(error, language, passphrase, words, seed))
+    {
+        return console_result::failure;
+    }
 
     output << base16(seed) << std::flush;
     return console_result::okay;
